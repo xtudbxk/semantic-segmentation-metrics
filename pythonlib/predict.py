@@ -42,8 +42,9 @@ class Predict():
         try:
             params = []
             while(True):
-                output,label,img = self.sess.run([self.net["rescale_output"],self.net["label"],self.net["input"]])
-                output_h,output_w = output.shape[1:3]
+                label,img = self.sess.run([self.net["label"],self.net["input"]])
+                output_h,output_w = img.shape[1:3]
+                output = np.zeros([label.shape[0],output_h,output_w,self.category_num])
                 for scale in scales:
                     scale_1 = 1.0/scale
                     img_scale = nd.zoom(img,[1.0,scale,scale,1.0],order=1)
@@ -78,6 +79,58 @@ class Predict():
             pool.close()
             pool.join()
             print("finally")
+
+    def metrics_predict_tf_with_crf_max(self,category="val",multiprocess_num=100,crf_config=None,scales=[]):
+        pool = Pool(multiprocess_num)
+        i = 0
+        m = metrics_np(n_class=self.category_num)
+        try:
+            params = []
+            while(True):
+                label,img = self.sess.run([self.net["label"],self.net["input"]])
+                output_h,output_w = img.shape[1:3]
+                output = np.zeros([label.shape[0],output_h,output_w,self.category_num])
+                final_output = np.zeros([1,output_h,output_w,self.category_num])
+                for scale in scales:
+                    scale_1 = 1.0/scale
+                    img_scale = nd.zoom(img,[1.0,scale,scale,1.0],order=1)
+                    #label_scale = nd.zoom(label,[1.0,scale,scale,1.0],order=1)
+                    output_scale = self.sess.run(self.net["rescale_output"],feed_dict={self.net["input"]:img_scale,self.net["label"]:label})
+                    output_scale = nd.zoom(output_scale,[1.0,scale_1,scale_1,1.0],order=0)
+                    output_scale_h,output_scale_w = output_scale.shape[1:3]
+                    output_h_ = min(output_h,output_scale_h)
+                    output_w_ = min(output_w,output_scale_w)
+                    final_output[:,:output_h_,:output_w_,:] = output_scale[:,:output_h_,:output_w_,:]
+                    output = np.max(np.stack([output,final_output],axis=4),axis=4)
+
+                params.append((img[0]+self.data.img_mean,label[0],output[0],crf_config,self.category_num))
+                if i % multiprocess_num == multiprocess_num -1:
+                    print("start %d ..." % i)
+                    #print("params:%d" % len(params))
+                    #print("params[0]:%d" % len(params[0]))
+                    if len(params) > 0:
+                        ret = pool.map(single_crf_metrics,params)
+                        for hist in ret:
+                            m.update_hist(hist)
+                    params = []
+                i += 1
+        except tf.errors.OutOfRangeError:
+            if len(params) > 0:
+                ret = pool.map(single_crf_metrics,params)
+                for hist in ret:
+                    m.update_hist(hist)
+            print("output of range")
+            print("tf miou:%f" % m.get("miou"))
+            print("all metrics:%s" % str(m.get_all()))
+        except Exception as e:
+            print("exception info:%s" % traceback.format_exc())
+        finally:
+            pool.close()
+            pool.join()
+            print("finally")
+    def metrics_predict(self,category="val",scales=[1],save_pred=False,label2rgb=True,output_npy=False):
+        self.data.reset_info()
+        cur_epoch = self.data.get_cur_epoch(category)
 
 # Originally written by wkentaro for the numpy version
 # https://github.com/wkentaro/pytorch-fcn/blob/master/torchfcn/utils.py

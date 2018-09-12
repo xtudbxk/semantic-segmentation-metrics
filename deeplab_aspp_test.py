@@ -221,7 +221,10 @@ class Test():
 
         crf_config = {"g_sxy":3,"g_compat":3,"bi_sxy":80,"bi_srgb":13,"bi_compat":10,"iterations":5} # for test
         start_time = time.time()
-        p.metrics_predict_tf_with_crf(multiprocess_num=50,crf_config=crf_config,scales=[0.7,1.25])
+        #p.metrics_predict_tf_with_crf(multiprocess_num=50,crf_config=crf_config,scales=[0.7,1.0,1.25])
+        #p.metrics_predict_tf_with_crf(multiprocess_num=50,crf_config=crf_config)
+        p.metrics_predict_tf_with_crf_max(multiprocess_num=50,crf_config=crf_config,scales=[0.5,0.75,1.0])
+        #p.metrics_predict_tf_with_crf_max(multiprocess_num=50,crf_config=crf_config)
         end_time = time.time()
         print("total time:%f" % (end_time - start_time))
 
