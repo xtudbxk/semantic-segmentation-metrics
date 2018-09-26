@@ -26,11 +26,12 @@ class Test():
         self.stride["input"] = 1
         self.trainable_list = []
 
-    def build(self,net_input,net_label):
+    def build(self,net_input,net_label,net_id):
         if "output" not in self.net:
             with tf.name_scope("placeholder"):
                 self.net["input"] = net_input
                 self.net["label"] = net_label # [None, self.h,self.w,1], int32
+                self.net["id"] = net_id
                 self.net["drop_prob"] = tf.Variable(1.0)
 
             self.net["output"] = self.create_network()
@@ -202,8 +203,8 @@ class Test():
         self.sess = tf.Session()
 
         data = dataset({"input_size":None,"categorys":["val"]}) # this is not same with self.data, note the input_size must be None
-        data_x,data_y,_,iterator = data.next_batch(category="val",epoches=1)
-        self.build(net_input=data_x,net_label=data_y)
+        data_x,data_y,data_id,iterator = data.next_batch(category="val",epoches=1)
+        self.build(net_input=data_x,net_label=data_y,net_id=data_id)
 
         #crf_config = None
         config = {"input_size":None,"sess":self.sess,"net":self.net,"data":data}
@@ -219,12 +220,9 @@ class Test():
             self.restore_from_model(self.saver,self.config.get("model_path"),checkpoint=False)
             print("model loaded ...")
 
-        crf_config = {"g_sxy":3,"g_compat":3,"bi_sxy":80,"bi_srgb":13,"bi_compat":10,"iterations":5} # for test
+        crf_config = {"g_sxy":3,"g_compat":3,"bi_sxy":80,"bi_srgb":13,"bi_compat":10,"iterations":10} # for test
         start_time = time.time()
-        #p.metrics_predict_tf_with_crf(multiprocess_num=50,crf_config=crf_config,scales=[0.7,1.0,1.25])
-        #p.metrics_predict_tf_with_crf(multiprocess_num=50,crf_config=crf_config)
-        p.metrics_predict_tf_with_crf_max(multiprocess_num=50,crf_config=crf_config,scales=[0.5,0.75,1.0])
-        #p.metrics_predict_tf_with_crf_max(multiprocess_num=50,crf_config=crf_config)
+        p.metrics_predict_tf_with_crf(multiprocess_num=50,crf_config=crf_config,scales=[0.5,0.75,1.0],use_max=True,output_dir=None)
         end_time = time.time()
         print("total time:%f" % (end_time - start_time))
 

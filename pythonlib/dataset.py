@@ -155,3 +155,20 @@ class dataset():
         img = tf.contrib.image.rotate(img, angle)
         label = tf.contrib.image.rotate(label,angle)
         return img, label
+
+    label2rgb_colors = np.array([(0, 0, 0), (128, 0, 0), (0, 128,0 ), (128, 128, 0),
+                      (0, 0, 128), (128, 0, 128), (0, 128, 128), (128, 128, 128),
+                      (64, 0, 0), (192, 0, 0), (64, 128, 0), (192, 128, 0),
+                      (64, 0, 128), (192, 0, 128), (64, 128, 128), (192, 128, 128),
+                      (0, 64, 0), (128, 64, 0), (0, 192, 0), (128, 192, 0),
+                      (0, 64, 128)]) # using palette for pascal voc
+    @staticmethod
+    def label2rgb(label,colors=[],ignore_label=128,ignore_color=(255,255,255)):
+        if len(colors) <= 0: 
+            index = np.unique(label)
+            #print("before index:%s" % str(index))
+            index = index[index<21]
+            #print("after index:%s" % str(index))
+            colors = dataset.label2rgb_colors[index]
+        label = imgco.label2rgb(label,colors=colors,bg_label=ignore_label,bg_color=ignore_color)
+        return label.astype(np.uint8)
