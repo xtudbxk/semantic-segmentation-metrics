@@ -3,7 +3,6 @@ import sys
 import math
 import numpy as np
 import tensorflow as tf
-#import skimage.io as imgio
 import skimage.color as imgco
 
 class dataset():
