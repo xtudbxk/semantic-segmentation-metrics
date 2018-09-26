@@ -8,6 +8,7 @@ from multiprocessing import Pool
 import tensorflow as tf
 from scipy import ndimage as nd
 from .crf import crf_inference
+from .dataset import dataset
 
 def single_crf_metrics(params):
     img,label,featmap,crf_config,category_num,id_,output_dir = params
