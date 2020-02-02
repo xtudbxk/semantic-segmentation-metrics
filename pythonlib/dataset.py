@@ -68,7 +68,7 @@ class dataset():
             img = tf.expand_dims(img,axis=0)
             label_f = x["label_f"]
             label_raw = tf.read_file(label_f)
-            label = tf.image.decode_image(label_raw)
+            label = tf.image.decode_image(label_raw)[:,:,0:1]
             label = tf.expand_dims(label,axis=0)
             if category == "train":
                 img,label = self.image_preprocess(img,label,random_scale=True,flip=True,rotate=False)
